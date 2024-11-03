@@ -291,22 +291,20 @@ seq_limit (u ∘ φ) l := by {
 
 /-- If `u` tends to `l` all its cluster points are equal to `l`. -/
 lemma cluster_limit (hl : seq_limit u l) (ha : cluster_point u a) : a = l := by {
+  apply near_cluster at ha
   apply eq_of_abs_sub_le_all
   intro ε ε_pos
 
   rcases hl (ε/2) (by linarith) with ⟨N₂, hl⟩
-  rcases ha with ⟨φ, hyp, seql⟩ 
-  rcases seql (ε/2) (by linarith) with ⟨N₁, seql⟩
 
-  let N := max N₁ N₂
-
-  have φN_ge_N₂ :=  ge_trans (id_le_extraction' hyp N) (le_max_right N₁ N₂)
+  specialize ha (ε/2) (by linarith) N₂
+  rcases ha with ⟨n, n_ge_N₂, ha⟩
 
   calc
-    |a - l| ≤ |a - (u ∘ φ) N| + |u (φ N) - l| := by exact abs_sub_le a (u (φ N)) l
-          _ = |(u ∘ φ) N - a| + |u (φ N) - l| := by rw [abs_sub_comm]
-          _ ≤ |(u ∘ φ) N - a| + ε / 2         := by linarith [hl (φ N) φN_ge_N₂]
-          _ ≤ ε / 2 + ε / 2                   := by linarith [seql N (le_max_left N₁ N₂)]
+    |a - l| ≤ |a - u n| + |u n - l| := by exact abs_sub_le a (u n) l
+          _ = |u n - a| + |u n - l| := by rw [abs_sub_comm]
+          _ ≤ |u n - a| + ε / 2     := by linarith [hl n n_ge_N₂]
+          _ ≤ ε / 2 + ε / 2         := by linarith [ha]
           _ = ε := by ring
 }
 
