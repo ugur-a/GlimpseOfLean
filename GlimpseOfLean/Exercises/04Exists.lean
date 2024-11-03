@@ -40,7 +40,13 @@ example (p q r s : Prop) (h : p → r) (h' : q → s) : p ∧ q → r ∧ s := b
 /- You can choose your own style in the next exercise. -/
 
 example (p q r : Prop) : (p → (q → r)) ↔ p ∧ q → r := by {
-  sorry
+  constructor
+  · intro h hpq
+    /- exact h hpq.1 hpq.2 -/
+    rcases hpq with ⟨hp, hq⟩
+    exact h hp hq
+  · intro h hp hq
+    exact h ⟨hp, hq⟩
 }
 
 /- Of course Lean doesn't need any help to prove this kind of logical tautologies.
@@ -85,7 +91,11 @@ By definition, `a ∣ b ↔ ∃ k, b = a*k`, so you can prove `a ∣ b` using th
 -/
 
 example (a b c : ℤ) (h₁ : a ∣ b) (h₂ : b ∣ c) : a ∣ c := by {
-  sorry
+  rcases h₁ with ⟨k₁, hk₁⟩
+  rcases h₂ with ⟨k₂, hk₂⟩
+  rw [hk₂, hk₁]
+  use k₁ * k₂
+  ring
 }
 
 
@@ -96,7 +106,10 @@ We can now start combining quantifiers, using the definition
 -/
 
 example (f g : ℝ → ℝ) (h : Surjective (g ∘ f)) : Surjective g := by {
-  sorry
+    intro b
+    rcases h b with ⟨a, ha⟩
+    use (f a)
+    exact ha
 }
 
 /- This is the end of this file about `∃` and `∧`. You've learned about tactics

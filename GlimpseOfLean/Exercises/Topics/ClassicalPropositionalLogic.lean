@@ -57,19 +57,24 @@ def Valid (A : Formula) : Prop := ∅ ⊨ A
 variable {v : Variable → Prop} {A B : Formula}
 @[simp] lemma isTrue_neg : IsTrue v ~A ↔ ¬ IsTrue v A := by simp
 
-@[simp] lemma isTrue_top : IsTrue v ⊤ := by {
-  sorry
-}
+@[simp] lemma isTrue_top : IsTrue v ⊤ := by simp
 
 @[simp] lemma isTrue_equiv : IsTrue v (A ⇔ B) ↔ (IsTrue v A ↔ IsTrue v B) := by {
-  sorry
+  constructor
+  · simp
+    intro ha hb
+    exact ⟨ha, hb⟩
+  · intro h
+    rcases h with ⟨ha, hb⟩
+    exact ⟨ha, hb⟩
 }
 
 /- As an exercise, let's prove (using classical logic) the double negation elimination principle.
   `by_contra h` might be useful to prove something by contradiction. -/
 
 example : Valid (~~A ⇔ A) := by {
-  sorry
+  by_contra h
+  simp at h
 }
 
 @[simp] lemma satisfies_insert_iff : Satisfies v (insert A Γ) ↔ IsTrue v A ∧ Satisfies v Γ := by {

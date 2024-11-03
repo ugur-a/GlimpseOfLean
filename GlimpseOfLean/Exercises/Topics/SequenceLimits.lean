@@ -21,13 +21,9 @@ example (a b : ℝ) (hb : 0 ≤ b) : a ≤ a + b := by linarith
 Let's prove some exercises using `linarith`.
 -/
 
-example (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a + b := by {
-  sorry
-}
+example (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a + b := by linarith
 
-example (a b c d : ℝ) (hab : a ≤ b) (hcd : c ≤ d) : a + c ≤ b + d := by {
-  sorry
-}
+example (a b c d : ℝ) (hab : a ≤ b) (hcd : c ≤ d) : a + c ≤ b + d := by linarith
 
 /-
 A sequence `u` is a function from `ℕ` to `ℝ`, hence Lean says
@@ -61,7 +57,13 @@ where `by linarith` will provide the proof of `δ/2 > 0` expected by Lean.
 /- If u is constant with value l then u tends to l.
 Hint: `simp` can rewrite `|1 - 1|` to `0` -/
 example (h : ∀ n, u n = l) : seq_limit u l := by {
-  sorry
+  intro ε _
+  use 0
+  intro n _
+  calc
+    |u n - l| = |l - l| := by rw [h n]
+            _ = 0       := by simp
+            _ ≤ ε       := by linarith
 }
 
 
@@ -83,7 +85,12 @@ or the primed version:
 -- Assume `l > 0`. Then `u` ts to `l` implies `u n ≥ l/2` for large enough `n`
 example (h : seq_limit u l) (hl : l > 0) :
     ∃ N, ∀ n ≥ N, u n ≥ l/2 := by {
-  sorry
+  rcases h (l/2) (by linarith) with ⟨ep, hep⟩
+  use ep
+  intro n hn
+  specialize hep n hn
+  rw [abs_le] at hep
+  linarith
 }
 
 
@@ -122,7 +129,24 @@ example (hu : seq_limit u l) (hv : seq_limit v l') :
 /- Let's do something similar: the squeezing theorem. -/
 example (hu : seq_limit u l) (hw : seq_limit w l) (h : ∀ n, u n ≤ v n) (h' : ∀ n, v n ≤ w n) :
     seq_limit v l := by {
-  sorry
+  intro ε ε_pos
+  rcases hu ε ε_pos with ⟨Nu, hu⟩
+  rcases hw ε ε_pos with ⟨Nw, hw⟩
+  use max Nu Nw
+  intro n hn
+  rw [ge_max_iff] at hn; rcases hn with ⟨hn₁, hn₂⟩
+  rw [abs_le]
+  constructor
+  · specialize hu n hn₁
+    rw [abs_le] at hu
+    calc
+      -ε ≤ u n - l := by exact hu.1
+       _ ≤ v n - l := by exact tsub_le_tsub_right (h n) l
+  · specialize hw n hn₂
+    rw [abs_le] at hw
+    calc
+      v n - l ≤ w n - l := by exact tsub_le_tsub_right (h' n) l
+             _ ≤ ε      := by exact hw.2
 }
 
 
@@ -137,7 +161,19 @@ Recall we listed three variations on the triangle inequality at the beginning of
 -- A sequence admits at most one limit. You will be able to use that lemma in the following
 -- exercises.
 lemma uniq_limit : seq_limit u l → seq_limit u l' → l = l' := by {
-  sorry
+  intros hl hl'
+  apply eq_of_abs_sub_le_all
+  intro ε ε_pos
+  rcases hl (ε/2) (by linarith) with ⟨N₁, hl⟩
+  rcases hl' (ε/2) (by linarith) with ⟨N₂, hl'⟩
+  let n := max N₁ N₂
+  specialize hl n (le_max_left N₁ N₂)
+  specialize hl' n (le_max_right N₁ N₂)
+  calc
+    |l-l'| ≤ |l - (u n)| + |(u n) - l'| := by exact abs_sub_le l (u n) l'
+         _ = |(u n) - l| + |(u n) - l'| := by rw [abs_sub_comm]
+         _ ≤ ε/2 + ε/2                  := by linarith [hl, hl']
+         _ = ε                          := by ring
 }
 
 
@@ -152,7 +188,20 @@ def is_seq_sup (M : ℝ) (u : ℕ → ℝ) :=
 (∀ n, u n ≤ M) ∧ ∀ ε > 0, ∃ n₀, u n₀ ≥ M - ε
 
 example (M : ℝ) (h : is_seq_sup M u) (h' : non_decreasing u) : seq_limit u M := by {
-  sorry
+  intro ε ε_pos
+  rcases h with ⟨M_max, M_reach⟩
+  rcases M_reach ε ε_pos with ⟨n₀,hn₀⟩
+  use n₀
+  intro n hn
+  rw [abs_le]
+  constructor
+  · calc
+      -ε ≤ u n₀ - M := by exact le_tsub_of_add_le_left hn₀
+       _ ≤ u n - M  := by exact tsub_le_tsub_right (h' n₀ n hn) M
+  · calc
+      u n - M ≤ M - M := by exact tsub_le_tsub_right (M_max n) M
+            _ = 0     := by ring
+            _ ≤ ε     := by exact le_of_lt ε_pos
 }
 
 /-
@@ -173,7 +222,7 @@ the proof below and try to reconstruct it.
 lemma id_le_extraction' : extraction φ → ∀ n, n ≤ φ n := by {
   intros hyp n
   induction n with
-  | zero =>  exact Nat.zero_le _
+  | zero => exact zero_le _
   | succ n ih => exact Nat.succ_le_of_lt (by linarith [hyp n (n+1) (by linarith)])
 }
 
@@ -186,7 +235,21 @@ In the exercise, we use `∃ n ≥ N, ...` which is the abbreviation of
 /-- Extractions take arbitrarily large values for arbitrarily large
 inputs. -/
 lemma extraction_ge : extraction φ → ∀ N N', ∃ n ≥ N', φ n ≥ N := by {
-  sorry
+  intros hyp N N'
+  unfold extraction at hyp
+  let n := max N N' + 1
+  use n
+  have n_gt_N : n > N := by calc 
+    n  > max N N'     := by linarith
+    _ ≥ N             := by exact le_max_left N N'
+  constructor
+  · linarith [le_max_right N N']
+  · calc
+      φ n ≥ φ N := by linarith [hyp N n n_gt_N]
+      /- φ n ≥ φ (max N N') := by exact Nat.le_of_succ_le (hyp N n n_gt_N) -/
+      /-   _ ≥ φ N := by exact Nat.le_of_succ_le (hyp N n n_gt_N) -/
+        _ ≥ N   := by exact id_le_extraction' hyp N
+
 }
 
 /- A real number `a` is a cluster point of a sequence `u`
@@ -200,19 +263,51 @@ if `u` has a subsequence converging to `a`.
 `u` arbitrarily close to `a` for arbitrarily large input. -/
 lemma near_cluster :
   cluster_point u a → ∀ ε > 0, ∀ N, ∃ n ≥ N, |u n - a| ≤ ε := by {
-  sorry
+  intros cluster ε ε_pos N₁
+  
+  rcases cluster with ⟨φ, hyp, seql⟩
+  rcases seql ε ε_pos with ⟨N₂, seql⟩
+  let N := max N₁ N₂
+
+  have φn_ge_N₁ := ge_trans (id_le_extraction' hyp N) (le_max_left N₁ N₂)
+  use φ N
+  constructor
+  · exact φn_ge_N₁
+  · exact seql N (by exact le_max_right N₁ N₂)
 }
 
 
 /-- If `u` tends to `l` then its subsequences tend to `l`. -/
 lemma subseq_tendsto_of_tendsto' (h : seq_limit u l) (hφ : extraction φ) :
 seq_limit (u ∘ φ) l := by {
-  sorry
+  intro ε ε_pos
+  rcases h ε ε_pos with ⟨N, h⟩
+  use N
+  intro n hn
+
+  have φn_ge_N := ge_trans (id_le_extraction' hφ n) hn
+  exact h (φ n) φn_ge_N
 }
 
 /-- If `u` tends to `l` all its cluster points are equal to `l`. -/
 lemma cluster_limit (hl : seq_limit u l) (ha : cluster_point u a) : a = l := by {
-  sorry
+  apply eq_of_abs_sub_le_all
+  intro ε ε_pos
+
+  rcases hl (ε/2) (by linarith) with ⟨N₂, hl⟩
+  rcases ha with ⟨φ, hyp, seql⟩ 
+  rcases seql (ε/2) (by linarith) with ⟨N₁, seql⟩
+
+  let N := max N₁ N₂
+
+  have φN_ge_N₂ :=  ge_trans (id_le_extraction' hyp N) (le_max_right N₁ N₂)
+
+  calc
+    |a - l| ≤ |a - (u ∘ φ) N| + |u (φ N) - l| := by exact abs_sub_le a (u (φ N)) l
+          _ = |(u ∘ φ) N - a| + |u (φ N) - l| := by rw [abs_sub_comm]
+          _ ≤ |(u ∘ φ) N - a| + ε / 2         := by linarith [hl (φ N) φN_ge_N₂]
+          _ ≤ ε / 2 + ε / 2                   := by linarith [seql N (le_max_left N₁ N₂)]
+          _ = ε := by ring
 }
 
 /-- Cauchy_sequence sequence -/
@@ -220,7 +315,16 @@ def CauchySequence (u : ℕ → ℝ) :=
   ∀ ε > 0, ∃ N, ∀ p q, p ≥ N → q ≥ N → |u p - u q| ≤ ε
 
 example : (∃ l, seq_limit u l) → CauchySequence u := by {
-  sorry
+  intros lim ε ε_pos
+  rcases lim with ⟨l, l_lim⟩
+  rcases l_lim (ε/2) (by linarith) with ⟨N, l_lim⟩
+  use N
+  intros p q p_ge_N q_ge_N
+  calc
+    |u p - u q| ≤ |u p - l| + |u q - l| := by exact abs_sub_le' (u p) l (u q)
+              _ ≤ |u p - l| + ε / 2     := by linarith [l_lim q q_ge_N]
+              _ ≤ ε / 2     + ε / 2     := by linarith [l_lim p p_ge_N]
+              _ = ε                     := by ring
 }
 
 /-
@@ -228,6 +332,20 @@ In the next exercise, you can reuse
  near_cluster : cluster_point u a → ∀ ε > 0, ∀ N, ∃ n ≥ N, |u n - a| ≤ ε
 -/
 
-example (hu : CauchySequence u) (hl : cluster_point u l) : seq_limit u l := by
-  sorry
+example (hu : CauchySequence u) (hl : cluster_point u l) : seq_limit u l := by {
+  intros ε ε_pos
 
+  apply near_cluster at hl
+
+  rcases hu (ε/2) (by linarith) with ⟨N₁, hu⟩
+  rcases hl (ε/2) (by linarith) N₁ with ⟨N₂, N₂_ge_N₁, hseql⟩
+
+  use N₁
+  intro n n_ge_N₁
+
+  calc
+    |u n - l| ≤ |u n - u N₂| + |u N₂ - l| := by exact abs_sub_le (u n) (u N₂) l
+            _ ≤ |u n - u N₂| + ε / 2      := by linarith [hseql]
+            _ ≤ ε / 2        + ε / 2      := by linarith [hu n N₂ n_ge_N₁ N₂_ge_N₁]
+            _ = ε                         := by ring
+}
