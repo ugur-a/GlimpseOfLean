@@ -195,12 +195,12 @@ example (M : ℝ) (h : is_seq_sup M u) (h' : non_decreasing u) : seq_limit u M :
   rw [abs_le]
   constructor
   · calc
-      -ε ≤ u n₀ - M := by exact le_tsub_of_add_le_left hn₀
-       _ ≤ u n - M  := by exact tsub_le_tsub_right (h' n₀ n hn) M
+      -ε ≤ u n₀ - M := by linarith [hn₀]
+       _ ≤ u n - M  := by linarith [h' n₀ n hn]
   · calc
-      u n - M ≤ M - M := by exact tsub_le_tsub_right (M_max n) M
+      u n - M ≤ M - M := by linarith [M_max n]
             _ = 0     := by ring
-            _ ≤ ε     := by exact le_of_lt ε_pos
+            _ ≤ ε     := by linarith [ε_pos]
 }
 
 /-
