@@ -273,7 +273,7 @@ lemma near_cluster :
   use φ N
   constructor
   · exact φn_ge_N₁
-  · exact seql N (by exact le_max_right N₁ N₂)
+  · exact seql N (le_max_right N₁ N₂)
 }
 
 
