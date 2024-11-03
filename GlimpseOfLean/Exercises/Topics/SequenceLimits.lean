@@ -107,17 +107,15 @@ example (hu : seq_limit u l) (hv : seq_limit v l') :
   rcases hv (ε/2) (by linarith) with ⟨N₂, hN₂⟩
   use max N₁ N₂
   intros n hn
-  have : n ≥ N₁ := by exact le_of_max_le_left hn
   rw [ge_max_iff] at hn
-  rcases hn with ⟨_hn₁, hn₂⟩
-  have fact₁ : |u n - l| ≤ ε/2 := hN₁ n (by linarith)
-  have fact₂ : |v n - l'| ≤ ε/2 := hN₂ n (by linarith)
-  
+  rcases hn with ⟨hn₁, hn₂⟩
+  have fact₁ : |u n - l| ≤ ε/2 := hN₁ n hn₁
+  have fact₂ : |v n - l'| ≤ ε/2 := hN₂ n hn₂
   calc
-    |(u + v) n - (l + l')| = |u n + v n - (l + l')|   := rfl
-    _ = |(u n - l) + (v n - l')|                      := by ring
-    _ ≤ |u n - l| + |v n - l'|                        := by apply abs_add
-    _ ≤ ε                                             := by linarith [fact₁, fact₂]
+    |(u + v) n - (l + l')| = |u n + v n - (l + l')|   := by rfl
+                         _ = |(u n - l) + (v n - l')| := by ring
+                         _ ≤ |u n - l| + |v n - l'|   := by apply abs_add
+                         _ ≤ ε                        := by linarith [fact₁, fact₂]
 }
 
 
