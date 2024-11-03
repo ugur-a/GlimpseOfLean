@@ -167,13 +167,12 @@ lemma uniq_limit : seq_limit u l → seq_limit u l' → l = l' := by {
   rcases hl (ε/2) (by linarith) with ⟨N₁, hl⟩
   rcases hl' (ε/2) (by linarith) with ⟨N₂, hl'⟩
   let n := max N₁ N₂
-  specialize hl n (le_max_left N₁ N₂)
-  specialize hl' n (le_max_right N₁ N₂)
+  have fact₁ := hl n (le_max_left N₁ N₂)
+  have fact₂ := hl' n (le_max_right N₁ N₂)
   calc
     |l-l'| ≤ |l - (u n)| + |(u n) - l'| := by exact abs_sub_le l (u n) l'
          _ = |(u n) - l| + |(u n) - l'| := by rw [abs_sub_comm]
-         _ ≤ ε/2 + ε/2                  := by linarith [hl, hl']
-         _ = ε                          := by ring
+         _ ≤ ε                          := by linarith [fact₁, fact₂]
 }
 
 
@@ -298,14 +297,13 @@ lemma cluster_limit (hl : seq_limit u l) (ha : cluster_point u a) : a = l := by 
   rcases hl (ε/2) (by linarith) with ⟨N₂, hl⟩
 
   specialize ha (ε/2) (by linarith) N₂
-  rcases ha with ⟨n, n_ge_N₂, ha⟩
+  rcases ha with ⟨n, n_ge_N₂, fact₁⟩
+  have fact₂ := hl n n_ge_N₂
 
   calc
     |a - l| ≤ |a - u n| + |u n - l| := by exact abs_sub_le a (u n) l
           _ = |u n - a| + |u n - l| := by rw [abs_sub_comm]
-          _ ≤ |u n - a| + ε / 2     := by linarith [hl n n_ge_N₂]
-          _ ≤ ε / 2 + ε / 2         := by linarith [ha]
-          _ = ε := by ring
+          _ ≤ ε                     := by linarith [fact₁, fact₂]
 }
 
 /-- Cauchy_sequence sequence -/
@@ -318,11 +316,13 @@ example : (∃ l, seq_limit u l) → CauchySequence u := by {
   rcases l_lim (ε/2) (by linarith) with ⟨N, l_lim⟩
   use N
   intros p q p_ge_N q_ge_N
+
+  have fact₁ := l_lim q q_ge_N
+  have fact₂ := l_lim p p_ge_N
+
   calc
     |u p - u q| ≤ |u p - l| + |u q - l| := by exact abs_sub_le' (u p) l (u q)
-              _ ≤ |u p - l| + ε / 2     := by linarith [l_lim q q_ge_N]
-              _ ≤ ε / 2     + ε / 2     := by linarith [l_lim p p_ge_N]
-              _ = ε                     := by ring
+              _ ≤ ε                     := by linarith [fact₁, fact₂]
 }
 
 /-
@@ -336,14 +336,14 @@ example (hu : CauchySequence u) (hl : cluster_point u l) : seq_limit u l := by {
   apply near_cluster at hl
 
   rcases hu (ε/2) (by linarith) with ⟨N₁, hu⟩
-  rcases hl (ε/2) (by linarith) N₁ with ⟨N₂, N₂_ge_N₁, hseql⟩
+  rcases hl (ε/2) (by linarith) N₁ with ⟨N₂, N₂_ge_N₁, fact₁⟩
 
   use N₁
   intro n n_ge_N₁
 
+  have fact₂ := hu n N₂ n_ge_N₁ N₂_ge_N₁
+
   calc
     |u n - l| ≤ |u n - u N₂| + |u N₂ - l| := by exact abs_sub_le (u n) (u N₂) l
-            _ ≤ |u n - u N₂| + ε / 2      := by linarith [hseql]
-            _ ≤ ε / 2        + ε / 2      := by linarith [hu n N₂ n_ge_N₁ N₂_ge_N₁]
-            _ = ε                         := by ring
+            _ ≤ ε                         := by linarith [fact₁, fact₂]
 }
