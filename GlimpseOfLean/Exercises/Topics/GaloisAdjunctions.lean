@@ -32,12 +32,16 @@ def isInf (s : Set X) (x₀ : X) :=
   ∀ x, x ∈ lowerBounds s ↔ x ≤ x₀
 
 lemma isInf.lowerBound {s : Set X} {x₀ : X} (h : isInf s x₀) : x₀ ∈ lowerBounds s := by {
-  sorry
+  rw [h x₀]
 }
 
 /-- A set has at most one infimum. -/
 def isInf.eq {s : Set X} {x₀ x₁ : X} (hx₀ : isInf s x₀) (hx₁ : isInf s x₁) : x₀ = x₁ := by {
-  sorry
+  have a₁ := (hx₀ x₁).1
+  have a₀ := (hx₁ x₀).1
+  apply isInf.lowerBound at hx₀
+  apply isInf.lowerBound at hx₁
+  exact le_antisymm (a₀ hx₀) (a₁ hx₁)
 }
 
 /-- An element `x₀` is an supremum of a set `s` in `X` if every element
@@ -72,7 +76,27 @@ def isSupFun (S : Set X → X) :=
 infimum function then it automatically admits a supremum function. -/
 
 lemma isSup_of_isInf {I : Set X → X} (h : isInfFun I) : isSupFun (fun s ↦ I (upperBounds s)) := by {
-  sorry
+  unfold isSupFun; simp
+  intro s x
+  unfold isInfFun at h
+  specialize h (upperBounds s)
+  constructor
+  · intro hx
+    apply isInf.lowerBound at h
+    unfold lowerBounds at h; simp at h
+    exact h hx
+  · intro hI y hy
+    calc
+      y ≤ I (upperBounds s) := by {
+        unfold isInf at h
+        unfold lowerBounds at h; simp at h
+        rw [←(h y)]
+        exact fun a ↦ a hy
+        /- intro a ha -/
+        /- unfold upperBounds at ha; simp at ha  -/
+        /- exact ha hy -/
+      }
+      _ ≤ x := by exact hI
 }
 
 /- Of course we also have the dual result constructing an infimum function from
@@ -145,6 +169,8 @@ or reprove it as part of your proof.
 -/
 
 lemma Inf_subset {s t : Set X} (h : s ⊆ t): Inf t ≤ Inf s := by {
+  apply lowerBounds_mono_set at h
+  
   sorry
 }
 
@@ -152,7 +178,11 @@ lemma Sup_subset {s t : Set X} (h : s ⊆ t): Sup s ≤ Sup t :=
   Inf_subset (X := OrderDual X) h
 
 lemma Inf_pair {x x' : X} : x ≤ x' ↔ Inf {x, x'} = x := by {
-  sorry
+  constructor
+  · intro x_le_x'
+    sorry
+  · intro hinf
+    sorry
 }
 
 lemma Sup_pair {x x' : X} : x ≤ x' ↔ Sup {x, x'} = x' := by {
